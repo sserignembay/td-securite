@@ -187,3 +187,24 @@ Ici, l'API est **stateless** : il n'y a pas de session ni de cookie. Les identif
 explicitement par le front dans l'en-tête `Authorization`, qu'un site tiers ne peut pas ajouter.
 L'attaque n'a donc pas de prise et on peut **désactiver** le CSRF. Ce choix n'est valable que
 parce que l'API est stateless : avec une authentification par session/cookie, il faudrait le garder.
+### Étape 5 : l'en-tête `Authorization: Basic`
+
+Avec `curl -v -u alice:alice123 localhost:8080/api/me`, curl envoie l'en-tête :
+
+`Authorization: Basic YWxpY2U6YWxpY2UxMjM=`
+
+Décodé (sous PowerShell : `[Text.Encoding]::UTF8.GetString([Convert]::FromBase64String("..."))`,
+équivalent de `base64 -d`) : **`alice:alice123`**.
+
+**Est-ce du chiffrement ?** **Non.** C'est un simple **encodage Base64** : réversible par
+n'importe qui, sans clé. Le Basic Auth transmet donc le login et le mot de passe pratiquement
+en clair, **à chaque requête** (puisque l'API est stateless).
+
+| | Encodage (Base64) | Chiffrement (TLS) | Hachage (BCrypt) |
+|---|---|---|---|
+| But | transporter | cacher | vérifier sans stocker l'original |
+| Réversible | oui, par tous | oui, avec la clé | non |
+| Dans le TD | en-tête `Authorization` | HTTPS (absent en local) | mots de passe en base |
+
+**Conséquence :** le Basic Auth ne doit être utilisé qu'avec **HTTPS**, qui chiffre toute la
+connexion (en-têtes compris). En `http://localhost` pour le TD c'est acceptable, jamais en production.
