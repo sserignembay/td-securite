@@ -144,3 +144,18 @@ Règles à faire respecter **côté serveur** :
   de passe, mais pas encore **où trouver** les utilisateurs de la base (étape 3).
 - L'utilisateur temporaire `user` est toujours créé (la ligne `generated security password`
   reste dans les logs), mais son mot de passe généré n'est pas un hash BCrypt.
+### Étape 3 : `UserDetailsService`
+
+- Bean déclaré dans `SecurityConfig` : il charge l'`Utilisateur` en base par son login
+  (`UtilisateurRepository.findByLogin`) et le traduit en `UserDetails` Spring Security
+  (login, hash BCrypt, rôle). Login inconnu : `UsernameNotFoundException`.
+- `.roles(...)` ajoute automatiquement le préfixe `ROLE_` (ex. `ROLE_CLIENT`).
+- La ligne `generated security password` disparaît des logs : Spring n'a plus besoin
+  de son utilisateur temporaire.
+- Résultats sur `/api/me` :
+  - `alice:alice123` : **200**, `{"login":"alice","roles":["CLIENT"]}`
+  - `alice:mauvais` : **401**
+  - `inconnu:test` : **401**
+- **Limite constatée :** avec `bruno:bruno123`, la réponse est 200 mais indique
+  `"login":"alice"`. Spring Security authentifie bien bruno, mais `MeController` utilise
+  encore `UtilisateurCourantFake`, qui répond toujours « alice » (corrigé à l'étape 6).
