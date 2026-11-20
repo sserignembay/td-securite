@@ -159,3 +159,31 @@ Règles à faire respecter **côté serveur** :
 - **Limite constatée :** avec `bruno:bruno123`, la réponse est 200 mais indique
   `"login":"alice"`. Spring Security authentifie bien bruno, mais `MeController` utilise
   encore `UtilisateurCourantFake`, qui répond toujours « alice » (corrigé à l'étape 6).
+### Étape 4 : `SecurityFilterChain`
+
+Configuration : CSRF désactivé, sessions `STATELESS`, `/api/**` authentifié, le reste libre,
+Basic Auth.
+
+**Constat avant la modification :** `POST /api/virements/1/valider` avec `-u alice:alice123`
+renvoie **401**, alors que les identifiants sont corrects et que les `GET` passent.
+Le filtre CSRF est placé **avant** le filtre Basic Auth : il rejette le POST (pas de jeton CSRF)
+alors que l'utilisateur est encore considéré comme anonyme, d'où un 401.
+
+**Après la modification :**
+
+- `POST /api/virements/1/valider` (alice) : **409** (virement déjà validé). La requête
+  atteint le controller : le CSRF ne bloque plus.
+- `GET /api/me` (alice) : **200**, et plus de cookie `JSESSIONID` : aucune session n'est créée.
+- `GET /api/me` sans identifiants : **401**.
+- Alice (cliente) peut encore tenter de valider : l'autorisation par rôle est traitée en partie 3.
+
+**Piège CSRF : que faut-il en faire, et pourquoi ?**
+
+Le CSRF (Cross-Site Request Forgery) exploite le fait que le navigateur **ajoute automatiquement
+le cookie de session** à toute requête vers le site, même si elle part d'un site malveillant.
+La protection CSRF exige un jeton secret que le site malveillant ne peut pas connaître.
+
+Ici, l'API est **stateless** : il n'y a pas de session ni de cookie. Les identifiants sont envoyés
+explicitement par le front dans l'en-tête `Authorization`, qu'un site tiers ne peut pas ajouter.
+L'attaque n'a donc pas de prise et on peut **désactiver** le CSRF. Ce choix n'est valable que
+parce que l'API est stateless : avec une authentification par session/cookie, il faudrait le garder.
