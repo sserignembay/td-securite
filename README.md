@@ -239,3 +239,16 @@ connexion (en-têtes compris). En `http://localhost` pour le TD c'est acceptable
   `Access-Control-Allow-Headers: authorization`.
 - `GET /api/comptes` sans identifiants reste en **401** : le CORS autorise la demande de
   permission, pas l'accès aux données.
+## Partie 2
+
+### Étape 2.1 : `AuthService.connecter`
+
+- Construit l'en-tête `Basic` avec `btoa('login:motDePasse')`, appelle `GET /api/me` avec
+  cet en-tête. En cas de 401, `HttpClient` lève une erreur : rien n'est mémorisé et la page
+  de login affiche « Identifiant ou mot de passe incorrect ».
+- En cas de succès : l'en-tête est gardé **en mémoire** (simple champ du service) et le signal
+  `utilisateur` est renseigné (la barre affiche « alice (CLIENT) »).
+- `deconnecter` oublie l'en-tête et l'utilisateur.
+- Constat : la connexion fonctionne, mais la page des comptes affiche « Impossible de charger
+  les comptes » : les autres requêtes partent **sans** l'en-tête `Authorization`, et l'API
+  stateless répond 401 (corrigé par l'intercepteur, étape 2.2).
