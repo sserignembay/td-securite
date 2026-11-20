@@ -268,3 +268,13 @@ connexion (en-têtes compris). En `http://localhost` pour le TD c'est acceptable
 Sources : documentation Angular (`HttpInterceptorFn`, `withInterceptors`) ; Stack Overflow,
 « How to make angular response to http 401 » (question 56663931) pour le schéma
 `catchError` → 401 → déconnexion et redirection.
+### Étape 2.3 : guard (`CanActivateFn`)
+
+- Fichier `ui/src/app/core/auth/auth.guard.ts` : si `AuthService.utilisateur()` est renseigné,
+  on laisse passer ; sinon on renvoie une redirection
+  `router.createUrlTree(['/login'], { queryParams: { retour: state.url } })`.
+- Appliquée avec `canActivate: [authGuard]` aux routes `comptes` et `comptes/:id`
+  (pas à `login`, sinon on ne pourrait jamais se connecter).
+- Test : connecté sur `/comptes/1`, rechargement (F5) : redirection vers
+  `/login?retour=%2Fcomptes%2F1`. Après connexion, retour direct sur `/comptes/1`
+  (la page de login fournie lit le paramètre `retour`).
