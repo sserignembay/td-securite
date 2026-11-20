@@ -133,3 +133,14 @@ Règles à faire respecter **côté serveur** :
 - Avec `-u alice:alice123` : **401**, alors que les identifiants sont corrects.
   Spring Security ne connaît pas encore les utilisateurs de la base.
 - On remarque aussi un cookie `JSESSIONID` : Spring crée une session par défaut.
+### Étape 2 : bean `PasswordEncoder` (BCrypt)
+
+- Déclaré dans `config/SecurityConfig` : `new BCryptPasswordEncoder()`, le même algorithme
+  que celui utilisé par `DonneesDemo` pour hacher les mots de passe en base.
+- Rôle : comparer le mot de passe reçu au hash stocké. BCrypt est à sens unique : il ne
+  « déchiffre » pas, il hache à nouveau le mot de passe reçu (avec le sel contenu dans le hash)
+  et compare.
+- Résultat : alice reçoit toujours **401**. Spring sait maintenant **comment vérifier** un mot
+  de passe, mais pas encore **où trouver** les utilisateurs de la base (étape 3).
+- L'utilisateur temporaire `user` est toujours créé (la ligne `generated security password`
+  reste dans les logs), mais son mot de passe généré n'est pas un hash BCrypt.
