@@ -105,3 +105,31 @@ Règles à faire respecter **côté serveur** :
 - Répondre `404` plutôt que `403` sur le compte d'un autre : pourquoi ?
 - Pourquoi BCrypt plutôt que SHA-256 ? Quel est son coût à chaque requête en Basic Auth ?
 - Que faudrait-il changer pour passer en JWT ou en session ?
+
+---
+
+# Réponses et constats
+
+## Avant de commencer : constat
+
+- `curl localhost:8080/api/comptes` renvoie les 3 comptes (Alice, Charles, Diane)
+  **sans aucune identification** : il n'y a pas d'authentification.
+- `curl -XPOST localhost:8080/api/virements/2/valider` passe le virement n°2 en `VALIDE`
+  avec `"validePar":"alice"` : une **cliente** valide un virement de son propre compte.
+  Il n'y a pas d'autorisation (contrôle des rôles).
+- Explication : `UtilisateurCourantFake` répond « alice » pour toutes les requêtes.
+
+## Partie 1
+
+### Étape 1 : ajout de `spring-boot-starter-security`
+
+**Que renvoie maintenant l'API ?**
+
+- Sans identifiants : **401 Unauthorized**, avec l'en-tête `WWW-Authenticate: Basic realm="Realm"`.
+  Toute l'API est verrouillée par défaut.
+- Spring Security crée un utilisateur temporaire `user` avec un mot de passe aléatoire
+  affiché dans les logs (`Using generated security password: ...`), géré en mémoire
+  (`inMemoryUserDetailsManager`). Avec `-u user:<mot de passe généré>` : **200**.
+- Avec `-u alice:alice123` : **401**, alors que les identifiants sont corrects.
+  Spring Security ne connaît pas encore les utilisateurs de la base.
+- On remarque aussi un cookie `JSESSIONID` : Spring crée une session par défaut.
