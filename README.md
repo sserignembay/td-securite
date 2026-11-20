@@ -278,3 +278,22 @@ Sources : documentation Angular (`HttpInterceptorFn`, `withInterceptors`) ; Stac
 - Test : connecté sur `/comptes/1`, rechargement (F5) : redirection vers
   `/login?retour=%2Fcomptes%2F1`. Après connexion, retour direct sur `/comptes/1`
   (la page de login fournie lit le paramètre `retour`).
+### Étape 2.4 : tests de la page de login
+
+**Mauvais mot de passe** (`alice` / `faux`) : le message « Identifiant ou mot de passe incorrect. »
+s'affiche et on reste sur `/login`. L'API répond 401 à `GET /api/me`, `HttpClient` lève une erreur,
+`connecter` ne mémorise rien, et la page de login affiche le message dans son `catch`.
+L'intercepteur ne redirige pas, car la requête de connexion porte déjà son propre en-tête.
+
+**Rechargement de la page en étant connecté : que se passe-t-il ?** On est déconnecté : la guard
+renvoie vers `/login?retour=<page>`, puis, après reconnexion, on revient sur la page demandée.
+
+**Pourquoi ?** Les identifiants sont gardés **en mémoire** (un champ de `AuthService`). Recharger
+la page relance l'application Angular de zéro et efface toutes les variables. L'API étant
+**stateless**, elle ne garde pas non plus de session : il ne reste aucune trace de la connexion.
+
+**Pourquoi ne pas les stocker dans `localStorage` / `sessionStorage` ?** En Basic Auth, ce qu'on
+stockerait serait le **mot de passe lui-même**, seulement encodé en Base64. Tout script exécuté
+dans la page (par exemple via une faille XSS) pourrait le lire et le voler, et avec `localStorage`
+il resterait sur le disque. Devoir se reconnecter après un rechargement est le prix de cette
+sécurité. Une vraie appli utiliserait plutôt un jeton temporaire (JWT, session), jamais le mot de passe.
