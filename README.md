@@ -208,3 +208,20 @@ en clair, **à chaque requête** (puisque l'API est stateless).
 
 **Conséquence :** le Basic Auth ne doit être utilisé qu'avec **HTTPS**, qui chiffre toute la
 connexion (en-têtes compris). En `http://localhost` pour le TD c'est acceptable, jamais en production.
+### Étape 6 : `UtilisateurCourant` lu dans le `SecurityContext`
+
+- Nouvelle classe `utilisateur/out/UtilisateurCourantSecurite`, qui implémente l'interface
+  `UtilisateurCourant` : elle lit `SecurityContextHolder.getContext().getAuthentication()`,
+  renvoie vide si personne n'est authentifié (ou utilisateur anonyme), sinon charge
+  l'`Utilisateur` en base par `auth.getName()`.
+- `UtilisateurCourantFake` supprimé (sinon deux beans `UtilisateurCourant` : l'appli ne démarre pas),
+  ainsi que la propriété `app.utilisateur-fake` dans `application.yml`.
+- Grâce à l'interface, `MeController` et `VirementService` n'ont pas été modifiés.
+
+**Résultats :**
+
+- `bruno:bruno123` sur `/api/me` : `{"login":"bruno","roles":["CONSEILLER"]}`
+  (avant : `"login":"alice"`).
+- `alice:alice123` sur `/api/me` : `{"login":"alice","roles":["CLIENT"]}`.
+- bruno valide le virement 3 : **200**, `"validePar":"bruno"`. La traçabilité de la
+  validation est correcte (avant, tous les virements étaient « validés par alice »).
