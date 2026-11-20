@@ -252,3 +252,19 @@ connexion (en-têtes compris). En `http://localhost` pour le TD c'est acceptable
 - Constat : la connexion fonctionne, mais la page des comptes affiche « Impossible de charger
   les comptes » : les autres requêtes partent **sans** l'en-tête `Authorization`, et l'API
   stateless répond 401 (corrigé par l'intercepteur, étape 2.2).
+### Étape 2.2 : intercepteur fonctionnel (`HttpInterceptorFn`)
+
+- Fichier `ui/src/app/core/auth/auth.interceptor.ts`, enregistré dans `app.config.ts` avec
+  `provideHttpClient(withInterceptors([authInterceptor]))`.
+- Pour les requêtes vers l'API uniquement (`req.url.startsWith(API)`), il ajoute l'en-tête
+  `Authorization` mémorisé par `AuthService` (via `req.clone({ setHeaders: ... })`, car une
+  requête Angular est immuable). On n'envoie jamais les identifiants à un autre site.
+- Sur un **401**, il déconnecte et renvoie vers `/login`, puis relaie l'erreur (`throwError`).
+  Exception : la requête de connexion elle-même (elle porte déjà son propre en-tête). Un 401
+  y signifie « mauvais mot de passe » et doit juste afficher le message d'erreur.
+- Résultat : après connexion, la liste des comptes s'affiche. Alice voit les 3 comptes
+  (y compris ceux de Charles et Diane) : les droits sont traités en partie 3.
+
+Sources : documentation Angular (`HttpInterceptorFn`, `withInterceptors`) ; Stack Overflow,
+« How to make angular response to http 401 » (question 56663931) pour le schéma
+`catchError` → 401 → déconnexion et redirection.
