@@ -34,10 +34,11 @@ public class SecurityConfig {
                 .orElseThrow(() -> new UsernameNotFoundException(login));
     }
 
-    // Étape 4 : les règles de sécurité
+    // Étape 4 : les règles de sécurité (+ CORS à l'étape 7)
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
+                .cors(Customizer.withDefaults())   // ← AJOUTÉ (étape 7)
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))

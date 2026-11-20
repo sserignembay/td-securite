@@ -225,3 +225,17 @@ connexion (en-têtes compris). En `http://localhost` pour le TD c'est acceptable
 - `alice:alice123` sur `/api/me` : `{"login":"alice","roles":["CLIENT"]}`.
 - bruno valide le virement 3 : **200**, `"validePar":"bruno"`. La traçabilité de la
   validation est correcte (avant, tous les virements étaient « validés par alice »).
+### Étape 7 : CORS dans la chaîne de sécurité
+
+- Le front (`localhost:4200`) et l'API (`localhost:8080`) ont des origines différentes.
+  Avant une requête avec l'en-tête `Authorization`, le navigateur envoie une requête de
+  permission (**preflight**) `OPTIONS`, **sans identifiants**. La chaîne de sécurité exige
+  une authentification sur `/api/**` : elle répondait 401 et le navigateur bloquait l'appel.
+- Correction : `.cors(Customizer.withDefaults())` dans la `SecurityFilterChain`. Spring Security
+  traite le CORS en premier, avec la configuration existante de `CorsConfig`.
+- Test (simulation du preflight) :
+  `curl -i -X OPTIONS localhost:8080/api/comptes -H "Origin: http://localhost:4200" -H "Access-Control-Request-Method: GET" -H "Access-Control-Request-Headers: authorization"`
+  : **200** avec `Access-Control-Allow-Origin: http://localhost:4200`,
+  `Access-Control-Allow-Headers: authorization`.
+- `GET /api/comptes` sans identifiants reste en **401** : le CORS autorise la demande de
+  permission, pas l'accès aux données.
